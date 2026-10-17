@@ -1,7 +1,5 @@
 {
-  "machines": {
-    "4cf02e1d5c1ba9efbffd36e5aca0dfa9e2d612045021aa84a90bb1afb7e58ea0": "dev-verify"
-  },
-  "issued": "2026-10-17T12:56:37.272284+00:00",
-  "sig": "2NWiau72wRucFq1KZSE11I48fA13lOqQvQ5MY7RAo9mjRAMR3Bc/hCQGznx/IrdS/lAaF6ymFH68bEHF+XF8AA=="
+  "machines": {},
+  "issued": "2026-10-17T12:59:34.921845+00:00",
+  "sig": "QseOaSlY4fLbgD3PsGgQEb6v8HujLBKO+81GROqbgxHKgtkQR0GtUM3nUNo4V9iAmJSWDD96TzRBxIvhWomnBg=="
 }
