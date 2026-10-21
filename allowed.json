@@ -1,7 +1,8 @@
 {
   "machines": {
-    "baa5e3b3e26211a1e20633816078f3a09d88272f80bcae4372ec83092643e6c8": "office-1"
+    "baa5e3b3e26211a1e20633816078f3a09d88272f80bcae4372ec83092643e6c8": "office-1",
+    "4cf02e1d5c1ba9efbffd36e5aca0dfa9e2d612045021aa84a90bb1afb7e58ea0": "dev-LIOR_MINI"
   },
-  "issued": "2026-10-19T10:10:50.073026+00:00",
-  "sig": "LUSNTavFBWsutueAD5eo52eqQ9ZsXecmOCUmvXh7xqAY/rymUrZrwnLTMhA/x4C22XmpzMZ5o/2rQKyACvMqAw=="
+  "issued": "2026-10-21T06:36:08.805441+00:00",
+  "sig": "qmMX43uet0jU6C19/DYRL6fAOuFOPKyfNzfHamd41mi21ByQpD6t4498TafYzmkmZBJ88zBVD5odp4UJIEN0Cw=="
 }
