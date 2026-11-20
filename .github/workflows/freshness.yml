@@ -1,0 +1,124 @@
+# תעודת טריות לרשימת המחשבים המורשים — LawMind Pro
+#
+# להעתיק לריפו הרישיונות (lawmind-license), שלושה קבצים מאותה תיקייה:
+#   freshness.yml               ->  .github/workflows/freshness.yml
+#   sign_freshness.py           ->  tools/sign_freshness.py
+#   requirements-freshness.txt  ->  tools/requirements-freshness.txt
+# נדרש Secret בריפו בשם LAWMIND_FRESHNESS_KEY (ראו FRESHNESS_README.md).
+#
+# מה קורה כאן: פעמיים ביום, ומיד אחרי כל שינוי של allowed.json, GitHub חותם
+# "הרשימה הזו עדיין בתוקף" ומפרסם את התעודה (עם עותק של הרשימה) בענף freshness.
+# הענף main לא משתנה, ולכן הכלים של הבעלים (הוספה / ביטול) ממשיכים לעבוד כרגיל.
+#
+# הפרדת הרשאות, שתי משימות:
+#   sign     מחזיקה את מפתח הטריות, ואין לה הרשאת כתיבה לריפו (contents: read).
+#   publish  כותבת לענף freshness, ואין לה את המפתח. היא לא מתקינה שום ספרייה.
+# ה-actions נעולים ל-commit (SHA) ולא לתג, והתלויות של החתימה נעולות ל-SHA256.
+name: License freshness
+
+on:
+  schedule:
+    # פעמיים ביום (UTC), בדקה לא עגולה: ריצות מתוזמנות ב-GitHub מתעכבות בשעות עגולות.
+    # פעמיים ולא פעם אחת: ריצה אחת שהתפספסה לא מורגשת (התוכנה סובלת 7 ימים).
+    - cron: "23 4,16 * * *"
+  push:
+    branches: [main]
+    paths: ["allowed.json"]
+  workflow_dispatch: {}
+
+# בלי הרשאות כברירת מחדל; כל משימה מקבלת רק את מה שהיא צריכה
+permissions: {}
+
+concurrency:
+  group: license-freshness
+  cancel-in-progress: false
+
+jobs:
+  sign:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      certificate: ${{ steps.sign.outputs.certificate }}
+      commit: ${{ steps.sign.outputs.commit }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Install the pinned signing dependencies
+        run: >
+          python -m pip install --disable-pip-version-check --no-input
+          --require-hashes --only-binary=:all:
+          -r tools/requirements-freshness.txt
+
+      - name: Sign the freshness certificate
+        id: sign
+        env:
+          LAWMIND_FRESHNESS_KEY: ${{ secrets.LAWMIND_FRESHNESS_KEY }}
+        run: |
+          set -euo pipefail
+          python tools/sign_freshness.py sign --list allowed.json --cert-out "$RUNNER_TEMP/certificate.json"
+          # התעודה (חתומה, ציבורית, בלי המפתח) עוברת למשימת הפרסום כפלט של המשימה
+          echo "certificate=$(base64 -w0 "$RUNNER_TEMP/certificate.json")" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  publish:
+    needs: sign
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write   # דחיפה לענף freshness
+      actions: write    # שמירת התזמון פעיל (הצעד האחרון)
+    steps:
+      - name: Checkout the commit that was signed
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.sign.outputs.commit }}
+          persist-credentials: false
+
+      - name: Assemble the published file
+        env:
+          CERTIFICATE_B64: ${{ needs.sign.outputs.certificate }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$CERTIFICATE_B64" | base64 -d > "$RUNNER_TEMP/certificate.json"
+          # python3 של ה-runner, ספריית התקן בלבד: במשימה הזו לא מתקינים כלום
+          python3 tools/sign_freshness.py assemble --list allowed.json \
+            --cert "$RUNNER_TEMP/certificate.json" --out "$RUNNER_TEMP/freshness.json"
+
+      - name: Publish to the freshness branch
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/publish"
+          rm -rf "$work" && mkdir -p "$work"
+          cp "$RUNNER_TEMP/freshness.json" "$work/freshness.json"
+          cd "$work"
+          git init -q -b freshness
+          git add freshness.json
+          git -c user.name="lawmind-freshness" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -q -m "freshness $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          # ענף עם commit יחיד שמוחלף בכל ריצה: אין היסטוריה שמתנפחת ואין התנגשויות
+          git push --force \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            freshness:freshness
+
+      - name: Keep the schedule alive
+        # GitHub משבית תזמון בריפו ציבורי אחרי 60 יום בלי פעילות. הפעלה מחדש דרך ה-API
+        # מאפסת את הספירה. כשל כאן לא מכשיל את הפרסום.
+        if: github.event_name == 'schedule'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/freshness.yml/enable"
