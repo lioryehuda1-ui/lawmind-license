@@ -1,0 +1,20 @@
+{
+  "kind": "lawmind-license-freshness-bundle",
+  "schema": 1,
+  "freshness": {
+    "kind": "lawmind-license-freshness",
+    "schema": 1,
+    "issued_at": "2026-11-28T13:14:48+00:00",
+    "list_sha256": "a594e0fd222477b545c703e284c834dc319d044ab33295524223b3e013ad9e2b",
+    "sig": "Zrg+FhS6VDepHErHev4WX7SWxaDhrE43q0oK4ZgdfzPpJYl8KEXLMDmTb6+wl8ek4iCB9NL2hrjpDszFwNlnDA=="
+  },
+  "list": {
+    "machines": {
+      "baa5e3b3e26211a1e20633816078f3a09d88272f80bcae4372ec83092643e6c8": "office-1",
+      "4cf02e1d5c1ba9efbffd36e5aca0dfa9e2d612045021aa84a90bb1afb7e58ea0": "dev-LIOR_MINI",
+      "106419f3e674c9daa7238a9819818e91b864dfd564667155ae07a3cc8ccdee20": "Ella-1"
+    },
+    "issued": "2026-11-05T15:54:43.382698+00:00",
+    "sig": "ipYhxpriA4boQq11TUfoIkJFI4E1RpSQtZcrIJWVQm3XK5VwnMYNZmWTYNZItB+PrHRhdeuIVqno9d5pnNAeDg=="
+  }
+}
